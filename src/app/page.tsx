@@ -11,35 +11,59 @@ import { faThumbsDown as faThumbsDownSolid } from '@fortawesome/free-solid-svg-i
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
 import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
+import Image from 'next/image';
 
 function Chat() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
-  const [chatMessages, setChatMessages] = useState([]);
-  const [selectedMessageId, setSelectedMessageId] = useState(null);
-  const [rating, setRating] = useState(null);
+
+  type Message = {
+    id: string;
+    role: 'user' | 'ai';
+    content: string;
+    createdAt: Date; // assuming createdAt is a string representation of date
+    rating?: 'like' | 'dislike' | undefined;
+    feedback?: string;
+  };
+  type ChatRequestOptions = {
+    // Define the properties of ChatRequestOptions here
+    // For example:
+    option1?: string;
+    option2?: number;
+    // ...
+  };
+  type UseChatHelpers = {
+    messages: Message[];
+    input: string;
+    handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleSubmit: (e: React.FormEvent<HTMLFormElement> | null, chatRequestOptions?: ChatRequestOptions | undefined) => void;
+  };
+
+  const { messages, input, handleInputChange, handleSubmit } = useChat() as UseChatHelpers
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [rating, setRating] = useState<string | null>(null);;
   const [feedbackText, setFeedbackText] = useState('');
-  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
   const [showCheckbox, setShowCheckbox] = useState(false);
-  const modalLikeRef = useRef(null);
-  const modalDisLikeRef = useRef(null);
-  const modalDeleteRef = useRef(null);
+  const modalLikeRef = useRef<HTMLDialogElement>(null);
+  const modalDisLikeRef = useRef<HTMLDialogElement>(null);
+  const modalDeleteRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedMessages = localStorage.getItem('messages');
       if (storedMessages) {
-        const parsedMessages = JSON.parse(storedMessages);
+        const parsedMessages: Message[] = JSON.parse(storedMessages);
         setChatMessages(parsedMessages);
 
       }
     }
-  }, []);
+  }, [selectedMessages]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (chatMessages.length && !messages.length) {
         localStorage.setItem('messages', JSON.stringify(chatMessages));
-        setChatMessages(chatMessages);
+        // setChatMessages(chatMessages);
       }
       if (messages.length > 0) {
         localStorage.setItem('messages', JSON.stringify(messages));
@@ -62,7 +86,7 @@ function Chat() {
     });
 
     localStorage.setItem('messages', JSON.stringify(updatedMessages));
-    setChatMessages(updatedMessages);
+    setChatMessages(updatedMessages as Message[]);
     if (modalLikeRef.current) {
       modalLikeRef.current.close();
     }
@@ -71,7 +95,7 @@ function Chat() {
     }
   };
 
-  const handleCheckboxChange = (data) => {
+  const handleCheckboxChange = (data: { id: string }) => {
     if (selectedMessages.includes(data.id)) {
       const updatedSelectedMessages = selectedMessages.filter(messageId => messageId !== data.id);
       setSelectedMessages(updatedSelectedMessages);
@@ -82,15 +106,18 @@ function Chat() {
 
   const checkedAll = () => {
     setSelectedMessages([])
-    chatMessages.map(m => {
-      setSelectedMessages(prevSelectedMessages => prevSelectedMessages.concat(m.id));
+    chatMessages.forEach(m => {
+      setSelectedMessages(prevSelectedMessages => [...prevSelectedMessages, m.id]);
     })
   }
 
   const deleteMessage = () => {
     const updatedMessages = chatMessages.filter(m => !selectedMessages.includes(m.id));
+    // setChatMessages(updatedMessages);
+
     localStorage.setItem('messages', JSON.stringify(updatedMessages));
     setChatMessages(updatedMessages);
+
     setSelectedMessages([]);
     setShowCheckbox(false);
     if (modalDeleteRef.current) {
@@ -109,7 +136,8 @@ function Chat() {
           />
           <div className='flex items-center gap-2'>
             <div className='w-10'>
-              <img src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" className='rounded-full' />
+              <Image src="/avatar.jpg" className='rounded-full' width={500}
+                height={500} alt="" />
             </div>
             <p>Leydroid</p>
           </div>
@@ -146,7 +174,8 @@ function Chat() {
 
                   <div className="chat-image avatar">
                     <div className="w-8 rounded-full">
-                      <img src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" />
+                      <Image alt="" src="/avatar.jpg" width={500}
+                        height={500} />
                     </div>
                   </div>
                 </div>
@@ -164,23 +193,27 @@ function Chat() {
                       setFeedbackText('');
                       setSelectedMessageId(m.id);
                       setRating('like');
-                      document.getElementById('modalLike').showModal()
+                      const modalLike = document.getElementById('modalLike') as HTMLDialogElement;
+                      if (modalLike) {
+                        modalLike.showModal();
+                      }
                     }}>
                       <FontAwesomeIcon
                         icon={m.rating && m.rating === 'like' ? faThumbsUpSolid : faThumbsUpRegular}
-
                       />
                     </button>
                     <button onClick={() => {
                       setFeedbackText('');
                       setSelectedMessageId(m.id);
                       setRating('dislike');
-                      document.getElementById('modalDislike').showModal()
-                    }} >
+                      const modalDislike = document.getElementById('modalDislike') as HTMLDialogElement | null;
+                      if (modalDislike) {
+                        modalDislike.showModal();
+                      }
+                    }}>
                       <FontAwesomeIcon
                         icon={m.rating && m.rating === 'dislike' ? faThumbsDownSolid : faThumbsDownRegular}
                       />
-
                     </button>
                   </div>
                 ) : ''}
@@ -200,7 +233,12 @@ function Chat() {
           <div className="fixed bottom-0 p-5 w-full bg-white shadow-md border">
             <div className='flex justify-between items-center'>
               <p className='text-gray-600'>{selectedMessages.length} Terpilih | <span onClick={() => checkedAll()}>Pilih Semua</span></p>
-              <button disabled={!selectedMessages.length} className='text-red-500' onClick={() => document.getElementById('modalDelete').showModal()}><FontAwesomeIcon icon={faTrashCan} /> Hapus</button>
+              <button disabled={!selectedMessages.length} className='text-red-500' onClick={() => {
+                const modalDelete = document.getElementById('modalDelete') as HTMLDialogElement;
+                if (modalDelete) {
+                  modalDelete.showModal();
+                }
+              }}><FontAwesomeIcon icon={faTrashCan} /> Hapus</button>
             </div>
           </div>
         ) : (
