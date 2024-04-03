@@ -1,113 +1,291 @@
-import Image from "next/image";
+'use client';
+import React, { useEffect, useState, useRef } from 'react';
 
-export default function Home() {
+import { useChat } from 'ai/react';
+import moment from 'moment';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faThumbsUp as faThumbsUpRegular } from "@fortawesome/free-regular-svg-icons";
+import { faThumbsUp as faThumbsUpSolid } from '@fortawesome/free-solid-svg-icons';
+import { faThumbsDown as faThumbsDownRegular } from '@fortawesome/free-regular-svg-icons';
+import { faThumbsDown as faThumbsDownSolid } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
+
+function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const [chatMessages, setChatMessages] = useState([]);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [rating, setRating] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [showCheckbox, setShowCheckbox] = useState(false);
+  const modalLikeRef = useRef(null);
+  const modalDisLikeRef = useRef(null);
+  const modalDeleteRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedMessages = localStorage.getItem('messages');
+      if (storedMessages) {
+        const parsedMessages = JSON.parse(storedMessages);
+        setChatMessages(parsedMessages);
+
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (chatMessages.length && !messages.length) {
+        localStorage.setItem('messages', JSON.stringify(chatMessages));
+        setChatMessages(chatMessages);
+      }
+      if (messages.length > 0) {
+        localStorage.setItem('messages', JSON.stringify(messages));
+        setChatMessages(messages);
+      }
+    }
+  }, [messages]);
+
+  const handleRating = () => {
+    const updatedMessages = chatMessages.map(m => {
+      if (m.id === selectedMessageId) {
+        return {
+          ...m,
+          rating: rating,
+
+          feedback: feedbackText
+        };
+      }
+      return m;
+    });
+
+    localStorage.setItem('messages', JSON.stringify(updatedMessages));
+    setChatMessages(updatedMessages);
+    if (modalLikeRef.current) {
+      modalLikeRef.current.close();
+    }
+    if (modalDisLikeRef.current) {
+      modalDisLikeRef.current.close();
+    }
+  };
+
+  const handleCheckboxChange = (data) => {
+    if (selectedMessages.includes(data.id)) {
+      const updatedSelectedMessages = selectedMessages.filter(messageId => messageId !== data.id);
+      setSelectedMessages(updatedSelectedMessages);
+    } else {
+      setSelectedMessages(prevSelectedMessages => prevSelectedMessages.concat(data.id));
+    }
+  };
+
+  const checkedAll = () => {
+    setSelectedMessages([])
+    chatMessages.map(m => {
+      setSelectedMessages(prevSelectedMessages => prevSelectedMessages.concat(m.id));
+    })
+  }
+
+  const deleteMessage = () => {
+    const updatedMessages = chatMessages.filter(m => !selectedMessages.includes(m.id));
+    localStorage.setItem('messages', JSON.stringify(updatedMessages));
+    setChatMessages(updatedMessages);
+    setSelectedMessages([]);
+    setShowCheckbox(false);
+    if (modalDeleteRef.current) {
+      modalDeleteRef.current.close();
+    }
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className='grid grid-cols-1'>
+      <div className='p-4 shadow-md flex justify-between items-center'>
+        <div className='flex items-center gap-6'>
+          <FontAwesomeIcon
+            icon={faArrowLeft}
+            className='text-lg'
+
+          />
+          <div className='flex items-center gap-2'>
+            <div className='w-10'>
+              <img src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" className='rounded-full' />
+            </div>
+            <p>Leydroid</p>
+          </div>
         </div>
+
+        {showCheckbox ? (<button className="btn" onClick={() => { setSelectedMessages([]), setShowCheckbox(false) }}>Batal</button>) : (
+          <details className="dropdown dropdown-end">
+            <summary tabIndex={0} className="btn">
+              <FontAwesomeIcon
+                icon={faEllipsisVertical}
+
+              />
+            </summary>
+            <ul tabIndex={0} className="p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-52">
+              <li><div className='text-red-500' tabIndex={0} role="button" onClick={() => {
+                setShowCheckbox(true)
+              }}><FontAwesomeIcon icon={faTrashCan} /> Hapus Chat</div></li>
+            </ul>
+          </details>
+
+        )}
+      </div>
+      <div className="min-h-screen">
+        <div className='px-4'>
+          {chatMessages.map(m => (
+            <div key={m.id} className={` p-4 rounded-lg mb-3  ${m.role === 'user' ? 'chat chat-end flex justify-end' : 'chat chat-start'}`}
+              style={{ alignItems: 'end' }}
+            >
+              {m.role !== 'user' ? (
+                <div className='flex gap-1'>
+                  {showCheckbox && (<input type="checkbox" className="checkbox"
+                    checked={selectedMessages.includes(m.id)}
+                    onChange={() => handleCheckboxChange(m)} />)}
+
+                  <div className="chat-image avatar">
+                    <div className="w-8 rounded-full">
+                      <img src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" />
+                    </div>
+                  </div>
+                </div>
+              ) : ''}
+              <div className={`chat-bubble ${m.role === 'user' ? 'bg-gray-200' : 'bg-[#2c2e63]'}`}>
+                <p className={`break-words ${m.role === 'user' ? 'text-black' : ''} `}>
+                  {m.content}
+                  <span className='text-xs ml-2 text-gray-500'>
+                    {moment(m.createdAt).format('HH:mm')}
+                  </span>
+                </p>
+                {m.role !== 'user' ? (
+                  <div className='flex gap-4 items-center justify-end p-4'>
+                    <button onClick={() => {
+                      setFeedbackText('');
+                      setSelectedMessageId(m.id);
+                      setRating('like');
+                      document.getElementById('modalLike').showModal()
+                    }}>
+                      <FontAwesomeIcon
+                        icon={m.rating && m.rating === 'like' ? faThumbsUpSolid : faThumbsUpRegular}
+
+                      />
+                    </button>
+                    <button onClick={() => {
+                      setFeedbackText('');
+                      setSelectedMessageId(m.id);
+                      setRating('dislike');
+                      document.getElementById('modalDislike').showModal()
+                    }} >
+                      <FontAwesomeIcon
+                        icon={m.rating && m.rating === 'dislike' ? faThumbsDownSolid : faThumbsDownRegular}
+                      />
+
+                    </button>
+                  </div>
+                ) : ''}
+
+              </div>
+              {showCheckbox && m.role === 'user' && (
+                <input type="checkbox" className="checkbox" checked={selectedMessages.includes(m.id)}
+                  onChange={() => handleCheckboxChange(m)} />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className='h-40'>
+        </div>
+
+        {showCheckbox ? (
+          <div className="fixed bottom-0 p-5 w-full bg-white shadow-md border">
+            <div className='flex justify-between items-center'>
+              <p className='text-gray-600'>{selectedMessages.length} Terpilih | <span onClick={() => checkedAll()}>Pilih Semua</span></p>
+              <button disabled={!selectedMessages.length} className='text-red-500' onClick={() => document.getElementById('modalDelete').showModal()}><FontAwesomeIcon icon={faTrashCan} /> Hapus</button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className='w-full fixed bottom-0 p-4'>
+            <input
+              className="input input-bordered w-full"
+              value={input}
+              placeholder="Send Message..."
+              onChange={handleInputChange}
+            />
+          </form>
+        )}
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      {/* MODAL LIKE */}
+      <dialog ref={modalLikeRef} id="modalLike" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            <h3 className="font-bold">Rating</h3>
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-1">✕</button>
+          </form>
+          <div className='text-center mb-4 mt-10'>
+            <FontAwesomeIcon icon={faThumbsUpRegular} className='text-2xl mb-1' />
+            <div className="mb-2">
+              <p className='font-bold'>Kamu menyukai balasan AI</p>
+              <p className='text-gray-500'>Ceritakan pengalaman tentang balasan chat ini</p>
+            </div>
+            <div className="w-full">
+              <textarea className="textarea textarea-bordered w-full" placeholder="Berikan tanggapanmu" value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}></textarea>
+            </div>
+          </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          <div className='w-full'>
+            <button className='btn btn-circle btn-neutral	w-full' onClick={handleRating}>Kirim</button>
+          </div>
+        </div>
+      </dialog>
+      {/* END MODAL LIKE */}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+      {/* MODAL DISLIKE */}
+      <dialog ref={modalDisLikeRef} id="modalDislike" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            <h3 className="font-bold">Rating</h3>
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-1">✕</button>
+          </form>
+          <div className='text-center mb-4 mt-10'>
+            <FontAwesomeIcon icon={faThumbsDownRegular} className='text-2xl mb-1' />
+            <div className="mb-2">
+              <p className='font-bold'>Kamu tidak menyukai balasan AI</p>
+              <p className='text-gray-500'>Ceritakan pengalaman tentang balasan chat ini</p>
+            </div>
+            <div className="w-full">
+              <textarea className="textarea textarea-bordered w-full" placeholder="Berikan tanggapanmu" value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}></textarea>
+            </div>
+          </div>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+          <div className='w-full'>
+            <button className='btn btn-circle btn-neutral	w-full' onClick={handleRating}>Kirim</button>
+          </div>
+        </div>
+      </dialog>
+      {/* END MODAL DISLIKE */}
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      {/* MODAL DELETE */}
+      <dialog ref={modalDeleteRef} id="modalDelete" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold">Hapus Chat</h3>
+
+          <div className='mb-8 mt-10'>
+            <p>Kamu akan menghapus chat ini, chat yang telah dihapus tidak dapat di pulihkan</p>
+          </div>
+          <div className='w-full mb-4'>
+            <button className='btn btn-circle btn-error	w-full text-white' onClick={deleteMessage}>Hapus Sekarang</button>
+          </div>
+          <form method="dialog">
+            <button className="w-full text-center btn-ghost">Kembali</button>
+          </form>
+        </div>
+      </dialog>
+      {/* END MODAL DISLIKE */}
+    </div >
   );
 }
+
+export default Chat;

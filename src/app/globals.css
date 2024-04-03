@@ -2,32 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+.dialog {
+  display: flex;
+  justify-content: space-between;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+.speech-bubble {
+  padding: 12px;
+  background: #EEEEEE;
+  color: #000000;
+  position: relative;
+  margin: 20px 0;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+.speech-bubble:after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  position: absolute;
+  top: 0px;
+  border-color: #EEEEEE;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.speech-bubble.speech-bubble-right {
+  margin-right: 20px;
+  border-radius: 8px 0 8px 8px;
+  width: max-content;
+  margin-left: auto;
+}
+
+.speech-bubble.speech-bubble-right:after {
+  border-width: 0 0 24px 20px;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  right: -19px;
+}
+
+.speech-bubble.speech-bubble-left {
+  margin-left: 20px;
+  border-radius: 0 8px 8px 8px;
+  width: max-content;
+}
+
+.speech-bubble.speech-bubble-left:after {
+  border-width: 0 20px 24px 0;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  left: -19px;
+}
+
+.speech-bubble.speech-bubble-dark {
+  color: #ffffff;
+  background: #2c2e63;
+}
+
+.speech-bubble.speech-bubble-dark:after {
+  border-color: #2c2e63;
 }
