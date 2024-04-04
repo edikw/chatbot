@@ -19,25 +19,23 @@ function Chat() {
     id: string;
     role: 'user' | 'ai';
     content: string;
-    createdAt: Date; // assuming createdAt is a string representation of date
+    createdAt: Date;
     rating?: 'like' | 'dislike' | undefined;
     feedback?: string;
   };
   type ChatRequestOptions = {
-    // Define the properties of ChatRequestOptions here
-    // For example:
     option1?: string;
     option2?: number;
-    // ...
   };
   type UseChatHelpers = {
     messages: Message[];
     input: string;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent<HTMLFormElement> | null, chatRequestOptions?: ChatRequestOptions | undefined) => void;
+    error: Error | null;
   };
 
-  const { messages, input, handleInputChange, handleSubmit } = useChat() as UseChatHelpers
+  const { messages, input, handleInputChange, handleSubmit, error } = useChat() as UseChatHelpers
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [rating, setRating] = useState<string | null>(null);;
@@ -56,15 +54,7 @@ function Chat() {
         setChatMessages(parsedMessages);
 
       }
-    }
-  }, [selectedMessages]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (chatMessages.length && !messages.length) {
-        localStorage.setItem('messages', JSON.stringify(chatMessages));
-        // setChatMessages(chatMessages);
-      }
       if (messages.length > 0) {
         localStorage.setItem('messages', JSON.stringify(messages));
         setChatMessages(messages);
@@ -113,7 +103,6 @@ function Chat() {
 
   const deleteMessage = () => {
     const updatedMessages = chatMessages.filter(m => !selectedMessages.includes(m.id));
-    // setChatMessages(updatedMessages);
 
     localStorage.setItem('messages', JSON.stringify(updatedMessages));
     setChatMessages(updatedMessages);
@@ -162,7 +151,14 @@ function Chat() {
       </div>
       <div className="min-h-screen">
         <div className='px-4'>
-          {chatMessages.map(m => (
+          {error && (
+            <div className="p-4 text-center break-words">
+              {error.name}
+              {error.message}
+            </div>
+          )}
+
+          {!error && chatMessages.map(m => (
             <div key={m.id} className={` p-4 rounded-lg mb-3  ${m.role === 'user' ? 'chat chat-end flex justify-end' : 'chat chat-start'}`}
               style={{ alignItems: 'end' }}
             >
