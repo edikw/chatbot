@@ -46,17 +46,22 @@ function Chat() {
   const modalLikeRef = useRef<HTMLDialogElement>(null);
   const modalDisLikeRef = useRef<HTMLDialogElement>(null);
   const modalDeleteRef = useRef<HTMLDialogElement>(null);
-
   const router = useRouter()
+
+  // Load the chat messages from the local storage
   useEffect(() => {
+    // Load the chat messages from the local storage
     if (typeof window !== 'undefined') {
+      // Get the stored messages from the local storage
       const storedMessages = localStorage.getItem('messages');
+      // Parse the stored messages
       if (storedMessages) {
         const parsedMessages: Message[] = JSON.parse(storedMessages);
+        // Update the state of chat messages
         setChatMessages(parsedMessages);
 
       }
-
+      // If there are new messages, save them to the local storage
       if (messages.length > 0) {
         localStorage.setItem('messages', JSON.stringify(messages));
         setChatMessages(messages);
@@ -64,7 +69,9 @@ function Chat() {
     }
   }, [messages]);
 
+  // Handle the rating of the selected message
   const handleRating = () => {
+    // Update the rating and feedback of the selected message
     const updatedMessages = chatMessages.map(m => {
       if (m.id === selectedMessageId) {
         return {
@@ -77,8 +84,11 @@ function Chat() {
       return m;
     });
 
+    // Save the updated messages to the local storage
     localStorage.setItem('messages', JSON.stringify(updatedMessages));
+    // Update the state of chat messages
     setChatMessages(updatedMessages as Message[]);
+    // Close the modal
     if (modalLikeRef.current) {
       modalLikeRef.current.close();
     }
@@ -87,30 +97,43 @@ function Chat() {
     }
   };
 
+  // Handle the change of the checkbox
   const handleCheckboxChange = (data: { id: string }) => {
+    // Check if the selected messages include the message id
     if (selectedMessages.includes(data.id)) {
+      // Remove the message id from the selected messages
       const updatedSelectedMessages = selectedMessages.filter(messageId => messageId !== data.id);
+      // Update the selected messages
       setSelectedMessages(updatedSelectedMessages);
     } else {
+      // Add the message id to the selected messages
       setSelectedMessages(prevSelectedMessages => prevSelectedMessages.concat(data.id));
     }
   };
 
+  // Handle the check all checkbox
   const checkedAll = () => {
+    // Reset the selected messages
     setSelectedMessages([])
+    // Add all the message ids to the selected messages
     chatMessages.forEach(m => {
       setSelectedMessages(prevSelectedMessages => [...prevSelectedMessages, m.id]);
     })
   }
 
+  // Handle the delete message
   const deleteMessage = () => {
+    // Filter the chat messages to remove the selected messages
     const updatedMessages = chatMessages.filter(m => !selectedMessages.includes(m.id));
-
+    // Save the updated messages to the local storage
     localStorage.setItem('messages', JSON.stringify(updatedMessages));
+    // Update the state of chat messages
     setChatMessages(updatedMessages);
-
+    // Reset the selected messages
     setSelectedMessages([]);
+    // Hide the checkbox
     setShowCheckbox(false);
+    // Close the modal
     if (modalDeleteRef.current) {
       modalDeleteRef.current.close();
     }
@@ -135,6 +158,9 @@ function Chat() {
           </div>
         </div>
 
+
+
+        {/* Show the delete button if the checkbox is shown, otherwise show the dropdown menu */}
         {showCheckbox ? (<button className="btn" onClick={() => { setSelectedMessages([]), setShowCheckbox(false) }}>Batal</button>) : (
           <details className="dropdown dropdown-end">
             <summary tabIndex={0} className="btn">
@@ -154,6 +180,8 @@ function Chat() {
       </div>
       <div className="min-h-screen">
         <div className='px-4'>
+
+          {/* Show the error message if there is an error */}
           {error && (
             <div className="p-4 text-center break-words">
               {error.name}
@@ -161,6 +189,7 @@ function Chat() {
             </div>
           )}
 
+          {/* Show the chat messages */}
           {!error && chatMessages.map(m => (
             <div key={m.id} className={` p-4 rounded-lg mb-3  ${m.role === 'user' ? 'chat chat-end flex justify-end' : 'chat chat-start'}`}
               style={{ alignItems: 'end' }}

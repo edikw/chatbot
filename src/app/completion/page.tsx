@@ -31,10 +31,15 @@ export default function Chat() {
   const modalDeleteRef = useRef<HTMLDialogElement>(null);
   const router = useRouter()
 
+  // Update the completion message with the rating and createdCompletion date
   useEffect(() => {
+    // Check if completion is not null
     if (completion) {
+      // Update the last message with the completion
       setChatMessages(prevMessages => {
+        // Get the last message index
         const lastMessageIndex = prevMessages.length - 1;
+        // Check if the last message index is greater than or equal to 0
         if (lastMessageIndex >= 0) {
           prevMessages[lastMessageIndex].completion = completion;
           prevMessages[lastMessageIndex].createdAtCompletion = new Date();
@@ -44,48 +49,66 @@ export default function Chat() {
     }
   }, [completion]);
 
+  // Load the chat messages from the local storage
   useEffect(() => {
+    // Check if window is not undefined
     if (typeof window !== 'undefined') {
+      // Get the saved chat messages from the local storage
       const savedChatMessages = localStorage.getItem('chatMessages');
       if (savedChatMessages) {
+        // Set the chat messages state with the saved chat messages
         setChatMessages(JSON.parse(savedChatMessages));
       }
     }
   }, []);
 
+  // Save the chat messages to the local storage
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Save the chat messages to the local storage
       if (chatMessages.length > 0) {
         localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
       }
     }
   }, [chatMessages]);
 
+  // Handle the form submit event
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Check if the input is empty
     const newMessage = { input, completion: '', createdAtInput: new Date(), createdAtCompletion: new Date(), rating: null };
-
+    // Add the new message to the chat messages
     setChatMessages(prevMessages => [...prevMessages, newMessage]);
+    // Reset the input value
     handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+    // Handle the form submit
     handleSubmit(e);
   };
 
-
+  // Handle the checkbox change event
   const handleCheckboxChange = (data: any) => {
+    // Check if the selected messages include the data
     if (selectedMessages.includes(data)) {
+      // Remove the data from the selected messages
       const updatedSelectedMessages = selectedMessages.filter(
         (messageId) => messageId !== data
       );
+      // Set the selected messages state with the updated selected messages
       setSelectedMessages(updatedSelectedMessages);
+      // Check if the updated selected messages length is 0
     } else {
+      // Add the data to the selected messages
       setSelectedMessages((prevSelectedMessages) =>
         prevSelectedMessages.concat(data)
       );
     }
   };
 
+  // Handle the rating
   const handleRating = () => {
+    // Check if the rating is not null
     const updatedMessages = chatMessages.map(m => {
+      // Check if the completion is equal to the selected message id
       if (m.completion === selectedMessageId) {
         return {
           ...m,
@@ -94,9 +117,11 @@ export default function Chat() {
       }
       return m;
     });
-
+    // Save the updated messages to the local storage
     localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+    // Set the chat messages state with the updated messages
     setChatMessages(updatedMessages as { input: string; completion: string; rating: null; createdAtInput: Date; createdAtCompletion: Date }[]); // Cast updatedMessages to the correct type
+    // Close the modal
     if (modalLikeRef.current) {
       modalLikeRef.current.close();
     }
@@ -105,17 +130,20 @@ export default function Chat() {
     }
   };
 
+  // Check all messages
   const checkedAll = () => {
     setSelectedMessages([])
+    // Check if the selected messages length is not equal to the chat messages length
     chatMessages.forEach(m => {
       setSelectedMessages(prevSelectedMessages => [...prevSelectedMessages, m.input, m.completion]);
     })
   }
 
-
+  // Delete the selected messages
   const deleteMessage = () => {
-
     let storedMessages = JSON.parse(localStorage.getItem('chatMessages') ?? '') || [];
+    // Filter the chat messages
+    // if when the input is selected
     selectedMessages.forEach(input => {
       storedMessages = storedMessages.map((m: { input: string }) => {
         if (m.input === input) {
@@ -124,6 +152,8 @@ export default function Chat() {
         return m;
       });
     });
+    // Filter the chat messages
+    // if when the completion is selected
     selectedMessages.forEach((completion: string) => {
       storedMessages = storedMessages.map((m: { completion: string }) => {
         if (m.completion === completion) {
@@ -132,12 +162,14 @@ export default function Chat() {
         return m;
       });
     });
-
+    // Save the stored messages to the local storage
     localStorage.setItem('chatMessages', JSON.stringify(storedMessages));
+    // Set the chat messages state with the stored messages
     setChatMessages(storedMessages);
-
+    // Reset the selected messages
     setSelectedMessages([]);
     setShowCheckbox(false);
+    // Close the modal
     if (modalDeleteRef.current) {
       modalDeleteRef.current.close();
     }
